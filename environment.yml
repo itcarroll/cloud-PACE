@@ -12,7 +12,7 @@ dependencies:
   - libnetcdf
   - msgspec
   - rioxarray
-  - xarray
+  - xarray>=2026.04
 platforms:
   - linux-64
   - osx-arm64

@@ -15,3 +15,4 @@ dependencies:
   - xarray
 platforms:
   - linux-64
+  - osx-arm64

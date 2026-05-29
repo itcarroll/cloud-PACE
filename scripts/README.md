@@ -5,7 +5,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.16.0
+    jupytext_version: 1.19.1
 kernelspec:
   display_name: Bash
   language: bash
@@ -63,7 +63,7 @@ micromamba activate workspace
 For execution on HPC, customize the following path to filesystem storage.
 
 ```{code-cell}
-export DATADIR=/mnt/mfs/${USER}/cloud-LDAS
+export DATADIR=${PWD}
 ```
 
 ## Reprocess FLDAS and NLDAS for Object Stores

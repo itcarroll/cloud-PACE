@@ -88,7 +88,7 @@ def storage_path(dataset, **kwargs):
 
     The array, which must have a size of one, will also have coordinates used to
     construct the output path for the processed granule. The resulting path looks
-    like "prefix/<product>/<rechunk>/<repack>/<kerchunk>/<file>".
+    like "prefix/<product>/<chunks>/<layout>/<virtual>/<granule>".
 
     Parameters
     ----------
@@ -103,7 +103,13 @@ def storage_path(dataset, **kwargs):
         a absolute path to use for storage of outputs
     """
     path = prefix
-    for item in ("product", "rechunk", "repack", "kerchunk", "file"):
+    for item in (
+        "product",
+        "chunks",
+        "layout",
+        "virtual",
+        "granule",
+    ):
         index = kwargs.get(item)
         if index is None:
             index = dataset[item].item()

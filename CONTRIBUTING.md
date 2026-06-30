@@ -7,9 +7,9 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.19.1
 kernelspec:
-  display_name: Bash
-  language: bash
-  name: bash
+  name: python3
+  language: python
+  display_name: Python 3 (ipykernel)
 ---
 
 # Contributing Guide
@@ -27,8 +27,8 @@ The new environment and the kernelspec modification may or may not persist betwe
 
 The first step is to create a Conda environment from `conda-lock.yml`, a requirements file with explicit versions that does not trigger dependency resolution.
 
-```{code-cell}
-conda-lock install --name workspace conda-lock.yml
+```{code-cell} ipython3
+micromamba create --yes --name workspace --file conda-lock.yml
 ```
 
 The second step is to make the environment accessible from Jupyter, which can be tricky on a hosted JupyterHub.
@@ -36,16 +36,15 @@ One way is to overwrite an existing (and therefore visible) kernelspec, which do
 The other way is to add a `--user` kernelspec.
 We also adjust the kernel's `PYTHONPATH` environment variable to allow `import core` to find the `scripts` folder.
 
-```{code-cell}
-conda run --name workspace \
-  python -m ipykernel install --prefix="$CONDA_PREFIX" --env PYTHONPATH "$PWD/scripts"
+```{code-cell} ipython3
+micromamba run --name workspace python -m ipykernel install --prefix="$CONDA_PREFIX"
 ```
 
 OR
 
-```{code-cell}
-conda run --name workspace \
-  python -m ipykernel install --user --env PYTHONPATH "$PWD/scripts"
+```{code-cell} ipython3
+jupyter kernelspec remove -y python3
+micromamba run --name workspace python -m ipykernel install --user
 ```
 
 ### Develop in Notebooks
@@ -60,7 +59,7 @@ When working in JupyterLab, Jupytext performs synchronization on save and on ope
 
 [Jupytext]: https://jupytext.readthedocs.io/
 
-```{code-cell}
+```{code-cell} ipython3
 jupytext --sync scripts/*.py
 ```
 
@@ -78,6 +77,6 @@ After adding a new dependency to `environment.yml`, you must regenerate the `con
 
 [conda-lock]: https://conda.github.io/conda-lock/
 
-```{code-cell}
+```{code-cell} ipython3
 conda-lock lock --file environment.yml
 ```

@@ -5,7 +5,7 @@ jupytext:
     extension: .md
     format_name: myst
     format_version: 0.13
-    jupytext_version: 1.19.1
+    jupytext_version: 1.18.1
 kernelspec:
   display_name: Bash
   language: bash
@@ -26,10 +26,10 @@ and then run cells below (as needed) within the same session using the activated
 
 +++
 
-Create the conda environment.
+Create the Conda environment.
 
 ```{code-cell}
-conda-lock install --name workspace ../conda-lock.yml
+micromamba create --yes --name workspace --file ../conda-lock.yml
 ```
 
 Activate the environment using your preferred distribution of conda.

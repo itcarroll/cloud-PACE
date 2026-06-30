@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.0
+#       jupytext_version: 1.19.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -22,9 +22,14 @@
 import argparse
 import os
 import pathlib
+import re
+import subprocess
+import sys
+
+import fsspec
 
 # %%
-import fsspec
+env = os.path.join(sys.prefix, "bin", "")
 
 # %% [markdown]
 # ## Command Line Arguments
@@ -44,7 +49,7 @@ in_cloud
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--remote",
-    default=os.environ["SCRATCH_BUCKET"] + "/cloud-LDAS" if in_cloud else "data",
+    default=os.environ["SCRATCH_BUCKET"] + "/cloud-PACE" if in_cloud else "data",
     help="location of storage used for reprocessed files and copies of the original",
 )
 parser.add_argument(
@@ -58,8 +63,8 @@ parser.add_argument(
     default=2,
     help="the number of files to reprocess, use '-1' for all",
 )
-args, _ = parser.parse_known_args()
-args
+opts, _ = parser.parse_known_args()
+opts
 
 # %% [markdown]
 # ### File handling
@@ -69,7 +74,7 @@ args
 # Also extract the prefix from the `remote` argument.
 
 # %%
-storage, prefix = fsspec.core.url_to_fs(args.remote)  # TODO: auto_mkdir if local
+storage, prefix = fsspec.core.url_to_fs(opts.remote)  # TODO: auto_mkdir if local
 storage
 
 # %%
@@ -78,8 +83,8 @@ if hasattr(storage, "auto_mkdir"):
 
 # %%
 prefix = pathlib.Path(prefix)
-if int(args.count) > -1:
-    prefix = prefix / str(args.count)
+if int(opts.count) > -1:
+    prefix = prefix / str(opts.count)
 prefix
 
 # %%
@@ -95,23 +100,49 @@ def storage_path(dataset, **kwargs):
     dataset : xarray.Dataset or xarray.DataArray
         the size-one chunk of the dataset used to distribute processing
     kwargs
-        override the array's coordinate value for the given keyword
+        use the given path segment for each keyword argument
 
     Returns
     -------
     str
-        a absolute path to use for storage of outputs
+        a path to use for storage of outputs
     """
     path = prefix
     for item in (
         "product",
-        "chunks",
-        "layout",
-        "virtual",
+        "rechunk",
+        "repack",
+        "reformat",
         "granule",
     ):
-        index = kwargs.get(item)
-        if index is None:
-            index = dataset[item].item()
-        path = path / str(index)
-    return path
+        label = kwargs.get(item)
+        if label is None:
+            label = dataset[item].item()
+        path = path / label
+    return str(path)
+
+
+# %% [markdown]
+# ## File Properties
+
+# %%
+re_metadata = re.compile(r"metadata: (\d+)")
+
+
+def metadata_size(path: str):
+    """Run "h5stat -S" and extract metadata size.
+
+    Parameters
+    ----------
+    path : str
+        a path recognized by "h5stat"
+
+    Returns
+    -------
+    str
+        a size in bytes
+    """
+    path = path if path.startswith("/") else storage.unstrip_protocol(path)
+    out = subprocess.run([f"{env}h5stat", "-S", path], capture_output=True)
+    size = re_metadata.search(out.stdout.decode()).group(1)
+    return size

@@ -19,20 +19,22 @@
 # ## Setup
 
 # %%
-from datetime import datetime, timedelta
-from tempfile import NamedTemporaryFile, TemporaryDirectory
 import subprocess
+from collections import defaultdict
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from time import perf_counter
 
+import earthaccess
+import h5py
+import xarray
 from dask.diagnostics import ProgressBar
 from kerchunk.combine import MultiZarrToZarr
 from kerchunk.hdf import SingleHdf5ToZarr
 from msgspec import json
-import earthaccess
-import fsspec
-import xarray as xr
-import requests
+from numpy import ceil, log2
 
-from core import args, storage, storage_path
+# %%
+from core import env, metadata_size, opts, storage, storage_path
 
 
 # %% [markdown]
@@ -60,17 +62,21 @@ def process_get(dataset):
         the processing time, with coordinates as for `dataset`
     """
     dst_path = storage_path(dataset)
-    with TemporaryDirectory() as tmpdir:
-        tmpdir = tmpdir if args.tmpdir else "tmp"
-        start = datetime.now()
-        paths = earthaccess.download(
-            [dataset["results"].item()],
-            tmpdir,
-            show_progress=False,
-        )
-        stop = datetime.now()
-        storage.put_file(paths[0], dst_path)
-    dataset["time"][...] = stop - start
+    if storage.exists(dst_path):
+        time = 0
+    else:
+        with TemporaryDirectory() as tmpdir:
+            time = perf_counter()
+            paths = earthaccess.download(
+                [dataset["results"].item()],
+                tmpdir if opts.tmpdir else "tmp",
+                show_progress=False,
+            )
+            time = perf_counter() - time
+            storage.put_file(paths[0], dst_path)
+    dataset["time"][...] = time
+    dataset["size"][...] = storage.info(dst_path)["size"]
+    dataset["metadata"][...] = metadata_size(dst_path)
     return dataset
 
 
@@ -78,7 +84,7 @@ def process_get(dataset):
 # #### rechunk
 
 # %%
-def process_rechunk(dataset):
+def process_rechunk(dataset, subprocess_args):
     """Fetch a granule from storage, rechunk, and push back.
 
     Copies an object from storage into a temporary file,
@@ -96,18 +102,35 @@ def process_rechunk(dataset):
         see `process_get`
     """
     dst_path = storage_path(dataset)
-    src_path = storage_path(dataset, chunks="")
-    if not storage.exists(src_path):
-        return dataset
-    chunk_size = dataset["chunks"].item()
-    with NamedTemporaryFile(suffix=".nc") as src:
-        with NamedTemporaryFile(suffix=".nc") as dst:
-            storage.get_file(src_path, src.name)
-            start = datetime.now()
-            subprocess.run(["nccopy", "-w", "-c", chunk_size, src.name, dst.name])
-            stop = datetime.now()
-            storage.put_file(dst.name, dst_path)
-    dataset["time"][...] = stop - start
+    src_path = storage_path(dataset, rechunk="null")
+    if storage.exists(dst_path):
+        time = 0
+    else:
+        # prepare for visititems
+        shape = {}
+
+        def get_shape(a, b):
+            if b := getattr(b, "shape", False):
+                shape[a] = "x".join((str(i) for i in b))
+
+        # run h5repack
+        args = subprocess_args[dataset["product"].item()][dataset["rechunk"].item()]
+        with NamedTemporaryFile(suffix=".nc") as src:
+            with NamedTemporaryFile(suffix=".nc") as dst:
+                storage.get_file(src_path, src.name)
+                time = perf_counter()
+                if isinstance(args, defaultdict):
+                    with h5py.File(src.name) as file:
+                        file.visititems(get_shape)
+                    args = tuple(
+                        f"--layout={k}:{args[k].format(v)}" for k, v in shape.items()
+                    )
+                subprocess.run([f"{env}h5repack", *args, src.name, dst.name])
+                time = perf_counter() - time
+                storage.put_file(dst.name, dst_path)
+    dataset["time"][...] = time
+    dataset["size"][...] = storage.info(dst_path)["size"]
+    dataset["metadata"][...] = metadata_size(dst_path)
     return dataset
 
 
@@ -115,7 +138,7 @@ def process_rechunk(dataset):
 # #### repack
 
 # %%
-def process_repack(dataset):
+def process_repack(dataset, subprocess_args):
     """Fetch a granule from storage, repack, and push back.
 
     Copies an object from storage into a temporary file,
@@ -132,20 +155,24 @@ def process_repack(dataset):
         see `process_get`
     """
     dst_path = storage_path(dataset)
-    src_path = storage_path(dataset, layout="")
-    if not storage.exists(src_path):
-        return dataset
-    page_size = dataset["layout"].item()
-    with NamedTemporaryFile(suffix=".nc") as src:
-        with NamedTemporaryFile(suffix=".nc") as dst:
-            storage.get_file(src_path, src.name)
-            start = datetime.now()
-            subprocess.run(
-                ["h5repack", "-P1", "-SPAGE", f"-G{page_size}", src.name, dst.name],
-            )
-            stop = datetime.now()
-            storage.put_file(dst.name, dst_path)
-    dataset["time"][...] = stop - start
+    src_path = storage_path(dataset, repack="null")
+    if storage.exists(dst_path):
+        time = 0
+    else:
+        args = subprocess_args[dataset["product"].item()][dataset["repack"].item()]
+        with NamedTemporaryFile(suffix=".nc") as src:
+            with NamedTemporaryFile(suffix=".nc") as dst:
+                storage.get_file(src_path, src.name)
+                time = perf_counter()
+                if "{size}" in args[0]:
+                    size = metadata_size(src.name)
+                    args = (args[0].format(size=int(2 ** ceil(log2(float(size))))),)
+                subprocess.run([f"{env}h5repack", *args, src.name, dst.name])
+                time = perf_counter() - time
+                storage.put_file(dst.name, dst_path)
+    dataset["time"][...] = time
+    dataset["size"][...] = storage.info(dst_path)["size"]
+    dataset["metadata"][...] = metadata_size(dst_path)
     return dataset
 
 
@@ -153,10 +180,10 @@ def process_repack(dataset):
 # #### kerchunk
 
 # %%
-def process_single_kerchunk(dataset):
-    """Kerchunk a single file in storage and push sidecar to storage.
+def process_single_reformat(dataset, subprocess_args):
+    """Extract metadata from a single file in storage and push sidecar to storage.
 
-    Execute kerchunking on a single object in storage,
+    Execute "kerchunking" on a single object in storage,
     and write the resulting sidecar file to storage.
 
     Parameters
@@ -170,16 +197,20 @@ def process_single_kerchunk(dataset):
         see `process_get`
     """
     dst_path = storage_path(dataset)
-    src_path = storage_path(dataset, virtual="")
-    if not storage.exists(src_path):
-        return dataset
-    start = datetime.now()
-    with storage.open(src_path) as src:
-        reference = SingleHdf5ToZarr(src, str(src_path)).translate()
-    with storage.open(dst_path, "wb") as dst:
-        dst.write(json.encode(reference))
-    stop = datetime.now()
-    dataset["time"][...] = stop - start
+    src_path = storage_path(dataset, reformat="null")
+    if storage.exists(dst_path):
+        time = 0
+    else:
+        args = subprocess_args[dataset["reformat"].item()]
+        time = perf_counter()
+        with storage.open(src_path) as src:
+            reference = SingleHdf5ToZarr(src, str(src_path)).translate()
+        with storage.open(dst_path, "wb") as dst:
+            dst.write(json.encode(reference))
+        time = perf_counter() - time
+    dataset["time"][...] = time
+    dataset["size"][...] = storage.info(dst_path)["size"]
+    dataset["metadata"][...] = storage.info(dst_path)["size"]
     return dataset
 
 
@@ -205,7 +236,7 @@ def process_multi_kerchunk(dataset):
     src_path = storage.glob(str(dst_path.parent / "G*"))
     if not src_path:
         return dataset
-    start = datetime.now()
+    start = perf_counter()
     reference = MultiZarrToZarr(
         [json.decode(storage.cat(i)) for i in src_path],
         remote_protocol=storage.protocol[0],
@@ -214,8 +245,9 @@ def process_multi_kerchunk(dataset):
     reference = reference.translate()
     with storage.open(dst_path.with_suffix(".json"), "wb") as dst:
         dst.write(json.encode(reference))
-    stop = datetime.now()
+    stop = perf_counter()
     dataset["time"][...] = stop - start
+    dataset["size"][...] = storage.info(dst_path)["size"]
     return dataset
 
 
@@ -229,15 +261,61 @@ def process_multi_kerchunk(dataset):
 # Define the datat to be reprocessed, and the needed reprocessing parameters, in a dictionary.
 
 # %%
-products = {
-    "PACE_OCI_L2_AOP": {
-        "query": {
-            "version": "3.1",
-            "temporal": ("2025-05-05", "2025-05-05"),
-        },
-        "chunks": [],
-        "layout": [f"{2**22}", f"{2**23}", f"{2**24}"],
-        "virtual": ["kerchunk-json"],
+queries = {
+    "AOP": {
+        "short_name": "PACE_OCI_L2_AOP",
+        "version": "3.1",
+        "temporal": ("2025-05-05", "2025-05-05"),
+    },
+    "RRS": {
+        "short_name": "PACE_OCI_L3M_RRS",
+        "version": "3.1",
+        "temporal": ("2025-05", "2025-05"),
+        "granule_name": "*.DAY.*.4km.*",
+    },
+}
+
+# %%
+shared_args = {
+    # the no-change args
+    "null": (),
+    # apply for process_repack
+    "page_20": ("-SPAGE", f"-G{2**20}"),
+    "page_22": ("-SPAGE", f"-G{2**22}"),
+    "page_24": ("-SPAGE", f"-G{2**24}"),
+    "block_16": (f"--metadata_block_size={2**14}",),
+    "block_20": (f"--metadata_block_size={2**20}",),
+    "block_24": (f"--metadata_block_size={2**24}",),
+    "block_smart": ("--metadata_block_size={size}",),
+    # apply for process_reformat
+    "kerchunk_json": ("kerchunk-json",),
+}
+args = {
+    "AOP": {
+        **shared_args,
+        # apply for process_rechunk
+        "chunk_one": ("--layout=geophysical_data/Rrs:CHUNK=337x212x43",),
+        "chunk_smart": defaultdict(
+            lambda: "CHUNK={}",  # CHUNK rather than CONTIG for compression
+            {
+                "sensor_band_parameters/wavelength_3d": "CONTIG",
+                "geophysical_data/Rrs": "CHUNK=337x212x43",
+                "geophysical_data/Rrs_unc": "CHUNK=337x212x43",
+            },
+        ),
+    },
+    "RRS": {
+        **shared_args,
+        # apply for process_rechunk
+        "chunk_one": (
+            "--layout=Rrs:CHUNK=216x216x43",
+        ),  # Rrs 3.1 is (16, 1024, 8), type is short, size is variable
+        "chunk_smart": defaultdict(
+            lambda: "CHUNK={}",  # CHUNK rather than CONTIG for compression
+            {
+                "Rrs": "CHUNK=216x216x43",
+            },
+        ),
     },
 }
 
@@ -248,86 +326,108 @@ products = {
 # %%
 earthaccess.login()
 dataset = []
-for key, value in products.items():
+stats = ["time", "size", "metadata"]
+for key, value in queries.items():
     results = earthaccess.search_data(
-        count=int(args.count),
-        short_name=key,
-        **value["query"],
+        count=int(opts.count),
+        **value,
     )
-    ds = xr.Dataset(
+    ds = xarray.Dataset(
         {
-            "results": ("granule", results),
-        },
-        coords={
-            "product": ("granule", [key] * len(results)),
             "granule": ("granule", [i["meta"]["concept-id"] for i in results]),
-        },
+            "product": ("granule", [key] * len(results)),
+            "results": ("granule", results),
+        }
     )
-    da = xr.DataArray(
-        float("nan"),
+    da = xarray.DataArray(
+        data=float("nan"),
         coords=[
-            ("chunks", ["", *value["chunks"]]),
-            ("layout", ["", *value["layout"]]),
-            ("virtual", ["", *value["virtual"]]),
+            ("rechunk", ["null", "chunk_one", "chunk_smart"]),
+            (
+                "repack",
+                [
+                    "null",
+                    "page_20",
+                    "page_22",
+                    "page_24",
+                    "block_16",
+                    "block_20",
+                    "block_24",
+                    "block_smart",
+                ],
+            ),
+            ("reformat", ["null"]),
         ],
     )
-    da = da.astype("timedelta64[ns]")
-    ds["time"] = da
+    for item in stats:
+        ds[item] = da.copy()
     dataset.append(ds)
-dataset = xr.concat(dataset, dim="granule", data_vars="all")
+dataset = xarray.concat(dataset, dim="granule", data_vars="all")
 dataset
 
 # %% [markdown]
 # ### Execute
+
+# %%
+from dask.distributed import Client
+
+# %%
+client = Client(n_workers=2, threads_per_worker=2)
+client
 
 # %% [markdown]
 # In each cell, a selection of the dataset is created and chunked before submitting to Dask workers for a reprocessing step.
 
 # %%
 levels = {
-    "chunks": [0],
-    "layout": [0],
-    "virtual": [0],
+    "rechunk": ["null"],
+    "repack": ["null"],
+    "reformat": ["null"],
 }
-ds = dataset.isel(levels).chunk(1)
-print("process_get")
-with ProgressBar():
-    ds = ds.map_blocks(process_get, template=ds).compute()
-dataset = xr.merge((dataset, ds), join="outer", compat="no_conflicts")
+ds = dataset.sel(levels)
+if ds.sizes["granule"]:
+    print("process_get")
+    ds = ds.chunk(1)
+    with ProgressBar():
+        ds = ds.map_blocks(process_get, template=ds).compute()
+    dataset = xarray.merge((dataset, ds[stats]))
 
 # %%
 levels = {
-    "layout": [0],
-    "virtual": [0],
+    "repack": ["null"],
+    "reformat": ["null"],
 }
-ds = dataset.isel(levels)
-ds = ds.where(ds["time"].isnull(), drop=True).chunk(1)
-if ds.sizes["chunks"]:
+ds = dataset.sel(levels)
+ds = ds.where(ds["time"].isnull(), drop=True)
+if ds.sizes["rechunk"]:
     print("process_rechunk")
+    ds = ds.chunk(1)
     with ProgressBar():
-        ds = ds.map_blocks(process_rechunk, template=ds).compute()
-    dataset = xr.merge((dataset, ds), join="outer", compat="no_conflicts")
+        ds = ds.map_blocks(process_rechunk, (args,), template=ds).compute()
+    dataset = xarray.merge((dataset, ds[stats]))
 
 # %%
 levels = {
-    "virtual": [0],
+    "reformat": ["null"],
 }
-ds = dataset.isel(levels)
-ds = ds.where(ds["time"].isnull(), drop=True).chunk(1)
-if ds.sizes["layout"]:
+ds = dataset.sel(levels)
+ds = ds.where(ds["time"].isnull(), drop=True)
+if ds.sizes["repack"]:
     print("process_repack")
+    ds = ds.chunk(1)
     with ProgressBar():
-        ds = ds.map_blocks(process_repack, template=ds).compute()
-    dataset = xr.merge((dataset, ds), join="outer", compat="no_conflicts")
+        ds = ds.map_blocks(process_repack, (args,), template=ds).compute()
+    dataset = xarray.merge((dataset, ds[stats]))
 
 # %%
 ds = dataset
-ds = ds.where(ds["time"].isnull(), drop=True).chunk(1)
-if ds.sizes["virtual"]:
+ds = ds.where(ds["time"].isnull(), drop=True)
+if ds.sizes["reformat"]:
     print("process_single_kerchunk")
+    ds = ds.chunk(1)
     with ProgressBar():
-        ds = ds.map_blocks(process_single_kerchunk, template=ds).compute()
-    dataset = xr.merge((dataset, ds), join="outer", compat="no_conflicts")
+        ds = ds.map_blocks(process_single_kerchunk, (args,), template=ds).compute()
+    dataset = xarray.merge((dataset, ds[stats]))
     # ds = dataset.groupby("product").first().isel({"virtual": slice(1, None)}).chunk(1)
     # print("process_multi_kerchunk")
     # with ProgressBar():
@@ -347,16 +447,27 @@ dataset.drop_vars("results").to_netcdf("reprocess.nc")
 # %% [markdown]
 # ## Display Results
 #
-# View the timing results as tables.
+# View the timing and size results as tables.
+# Display the file layout.
 
 # %%
-ds = xr.load_dataset("reprocess.nc")
+ds = xarray.load_dataset("reprocess.nc")
 
 # %%
-df = ds["time"].groupby("product").mean().to_dataframe()
-# df = ds["time"].rename({"_product": "product"}).groupby("product").mean().to_dataframe()
-df["time"].dropna().dt.total_seconds().reset_index()
+reduced = {}
+gb = ds.groupby(ds["product"])
+reduced["avg"] = gb.mean("granule")
+reduced["std"] = gb.std("granule")
 
 # %%
-# df = ds["time_multi_kerchunk"].to_dataframe()
-# df["time_multi_kerchunk"].dropna().dt.total_seconds().reset_index()
+reduced = [v.rename({i: f"{i}_{k}" for i in v}) for k, v in reduced.items()]
+ds = xarray.merge(reduced)
+df = ds.to_dataframe()
+
+# %%
+df
+
+# %%
+df.plot.bar(y="time_avg")
+
+# %%

@@ -6,6 +6,7 @@ dependencies:
   - fsspec
   - geopandas
   - h5netcdf
+  - igraph
   - ipykernel
   - ipywidgets
   - kerchunk
@@ -13,6 +14,7 @@ dependencies:
   - hdf5>=2.0
   - msgspec
   - rioxarray
+  - tabulate
   - xarray>=2026.04
 platforms:
   - linux-64

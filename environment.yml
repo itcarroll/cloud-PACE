@@ -4,7 +4,7 @@ channels:
 dependencies:
   - bash_kernel
   - dask
-  - earthaccess[extras=[virtualizarr]]
+  - conda-pypi::earthaccess[extras=[virtualizarr]]  # extras are not available on conda-forge::earthaccess
   - fsspec
   - geopandas
   - h5netcdf

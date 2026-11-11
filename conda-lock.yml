@@ -4,12 +4,14 @@ metadata:
   channels:
     - url: conda-forge
       used_env_vars: []
+    - url: conda-pypi
+      used_env_vars: []
   platforms:
     - linux-64
   sources:
     - ''
   time_metadata:
-    created_at: '2026-11-11T17:25:22Z'
+    created_at: '2026-11-11T22:58:43Z'
   custom_metadata:
     created_by: conda-lockfiles 0.2.2
 package:
@@ -566,6 +568,23 @@ package:
       sha256: 741042dc183403b9307ac7d92e8da163ef7868876b5653d5f9205d5102844b51
     category: main
     optional: false
+  - name: cramjam
+    version: 2.14.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      python: ''
+      __glibc: '>=2.17,<3.0.a0'
+      libgcc: '>=15'
+      libstdcxx: '>=15'
+      python_abi: 3.14.*
+    url: 
+      https://conda.anaconda.org/conda-forge/linux-64/cramjam-2.14.0-py314hbaacaaa_1.conda
+    hash:
+      md5: 2484f11df55e45c322b7705f3f47caa7
+      sha256: a44ed5e03460e987e976e13de2da9ba2f806a1286d9d3e8e8132682ad47e4e64
+    category: main
+    optional: false
   - name: cytoolz
     version: 1.2.0
     manager: conda
@@ -598,6 +617,27 @@ package:
     hash:
       md5: 1049b781be85a96d8e73acb9c9c1f8fe
       sha256: 90ad96f17ff3910bbfd1c289156e5af8231795101e73e799c0f0029c660657cf
+    category: main
+    optional: false
+  - name: fastparquet
+    version: 2026.5.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      __glibc: '>=2.17,<3.0.a0'
+      cramjam: '>=2.3'
+      fsspec: ''
+      libgcc: '>=14'
+      numpy: '>=1.23,<3'
+      packaging: ''
+      pandas: '>=1.5.0'
+      python: '>=3.14,<3.15.0a0'
+      python_abi: 3.14.*
+    url: 
+      https://conda.anaconda.org/conda-forge/linux-64/fastparquet-2026.5.0-py314hc02f841_0.conda
+    hash:
+      md5: 7eacd1ab0881bd50ebf2824ae227098d
+      sha256: 344f92cb3e2e5e9d4d98219556b2987cbd6cead93e8c80be4fc824ba63e1911d
     category: main
     optional: false
   - name: fontconfig
@@ -2594,6 +2634,22 @@ package:
       sha256: 7533361a15ff1d4c1e7069b9410d32a602a6a9350d717a43731b07e3565a6689
     category: main
     optional: false
+  - name: obstore
+    version: 0.12.1
+    manager: conda
+    platform: linux-64
+    dependencies:
+      __glibc: '>=2.17,<3.0.a0'
+      libgcc: '>=15'
+      python: '>=3.14,<3.15.0a0'
+      python_abi: 3.14.*
+    url: 
+      https://conda.anaconda.org/conda-forge/linux-64/obstore-0.12.1-py314hdb4c9e8_0.conda
+    hash:
+      md5: 39b9a67de914f88bfe023feb47f91fcb
+      sha256: 36dfb531479e77e049b06e381db12a0c3943b0e8f4586600be89bba9fd32b567
+    category: main
+    optional: false
   - name: openjpeg
     version: 2.5.4
     manager: conda
@@ -3907,29 +3963,6 @@ package:
       sha256: d58e97d418f71703e822c422af5b9c431e3621a0ecdc8b0334c1ca33e076dfe7
     category: main
     optional: false
-  - name: earthaccess
-    version: 0.19.0
-    manager: conda
-    platform: linux-64
-    dependencies:
-      fsspec: '>=2025.2'
-      importlib-resources: '>=6.3.2'
-      multimethod: '>=1.8'
-      pqdm: '>=0.1'
-      python: ''
-      python-cmr: '>=0.10.0'
-      requests: '>=2.26'
-      s3fs: '>=2025.2'
-      tenacity: '>=8.0'
-      tinynetrc: '>=1.3.1'
-      typing_extensions: '>=4.10.0'
-    url: 
-      https://conda.anaconda.org/conda-forge/noarch/earthaccess-0.19.0-pyhc364b38_0.conda
-    hash:
-      md5: 62981cc138372950409c7c1c1a9e75de
-      sha256: e43e585703eafa34e8a8571a1a35c5fda86f1bf92658055b37f40e2459200cb8
-    category: main
-    optional: false
   - name: executing
     version: 2.3.0
     manager: conda
@@ -4183,20 +4216,6 @@ package:
     hash:
       md5: 8401f0ee3de84b5a549c47cf3038909b
       sha256: 43151c94c02fa67e8105cfe64c8c27a1b260b22bae6ddbe9c33b56a9c302e459
-    category: main
-    optional: false
-  - name: importlib-resources
-    version: 7.1.0
-    manager: conda
-    platform: linux-64
-    dependencies:
-      importlib_resources: '>=7.1.0,<7.1.1.0a0'
-      python: '>=3.10'
-    url: 
-      https://conda.anaconda.org/conda-forge/noarch/importlib-resources-7.1.0-pyhd8ed1ab_0.conda
-    hash:
-      md5: e3bffa82b874f8b9a2631bddb3869529
-      sha256: 6a2f86ef0965605d742b5b94229bf8b829258d0a9f640e3651901cc72ef9a0a5
     category: main
     optional: false
   - name: importlib_resources
@@ -4524,6 +4543,35 @@ package:
       sha256: 9458e13767779d5db48c035ba27a1af843fde5187d34c17b60076e18835e8637
     category: main
     optional: false
+  - name: obspec
+    version: 0.1.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      python: '>=3.10'
+      typing_extensions: ''
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/obspec-0.1.0-pyhd8ed1ab_0.conda
+    hash:
+      md5: 4aa28f61300cb34c93ea4b4a641b757f
+      sha256: a7b3c33712406ded924d218b1c6b487a518488aa65d7a0d112129354d5e5f030
+    category: main
+    optional: false
+  - name: obspec_utils
+    version: 0.9.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      obspec: ''
+      obstore: ''
+      python: '>=3.11'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/obspec_utils-0.9.0-pyhd8ed1ab_0.conda
+    hash:
+      md5: 3289f38214d30fa6f32540d3fcb7c278
+      sha256: ff5dde31652a8720477588c4e66f71015ef935b2e0c8cab3092ee0edc14609ee
+    category: main
+    optional: false
   - name: packaging
     version: '26.3'
     manager: conda
@@ -4563,6 +4611,19 @@ package:
     hash:
       md5: 0badf9c54e24cecfb0ad2f99d680c163
       sha256: 472fc587c63ec4f6eba0cc0b06008a6371e0a08a5986de3cf4e8024a47b4fe6c
+    category: main
+    optional: false
+  - name: pathlib-abc
+    version: 0.5.2
+    manager: conda
+    platform: linux-64
+    dependencies:
+      python: '>=3.10'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/pathlib-abc-0.5.2-pyh9692d8f_0.conda
+    hash:
+      md5: 9c7e6958c1ddc27ceb271eb7422bee56
+      sha256: 70fff431251c35a2fe82a04452e8b37afe71a1d9e04c84c75bc10b70a50ada09
     category: main
     optional: false
   - name: pexpect
@@ -5024,6 +5085,34 @@ package:
       sha256: 2b7ca858879f183ce2dcc65b300f48a0133d5430550f35b23d80d405a0788dbf
     category: main
     optional: false
+  - name: universal-pathlib
+    version: 0.3.10
+    manager: conda
+    platform: linux-64
+    dependencies:
+      universal_pathlib: '>=0.3.10,<0.3.11.0a0'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/universal-pathlib-0.3.10-hd8ed1ab_0.conda
+    hash:
+      md5: b7f7aee45453d0664717c7a078262c5c
+      sha256: 4a42f4a40563e4521838afb607cf7a4012570a02e768af425d026ac976fc7c4a
+    category: main
+    optional: false
+  - name: universal_pathlib
+    version: 0.3.10
+    manager: conda
+    platform: linux-64
+    dependencies:
+      fsspec: '>=2024.5.0'
+      pathlib-abc: '>=0.5.1,<0.6.0'
+      python: '>=3.10'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/universal_pathlib-0.3.10-pyhd8ed1ab_0.conda
+    hash:
+      md5: 62c51c758ef3d6a4d5076e84109452a6
+      sha256: c58620fc5979695588835c43b6cee94c35dd6fb2d2ed890ec934c2f09ad3ad2c
+    category: main
+    optional: false
   - name: urllib3
     version: 2.8.0
     manager: conda
@@ -5039,6 +5128,28 @@ package:
     hash:
       md5: 407a3d3778570bae8e8fcf554e803e43
       sha256: c5511c190ab55168ca412f3c54592fbf677ae6250784cb72b227a7cf3f538f7d
+    category: main
+    optional: false
+  - name: virtualizarr
+    version: 2.8.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      numcodecs: '>=0.15.1'
+      numpy: '>=2.1.0'
+      obspec_utils: '>=0.9.0'
+      obstore: '>=0.7.0'
+      packaging: ''
+      python: '>=3.12'
+      ujson: ''
+      universal-pathlib: ''
+      xarray: '>=2025.06.0'
+      zarr: '>=3.1.6'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/virtualizarr-2.8.0-pyhd8ed1ab_0.conda
+    hash:
+      md5: 0578a09fefef481d0a3c4f88c37e1324
+      sha256: 6c09a6b990f3037b1c40d50d3a6588b5810ccb376e9b064b115ef679ad029ec6
     category: main
     optional: false
   - name: widgetsnbextension
@@ -5127,5 +5238,28 @@ package:
     hash:
       md5: 3a99defa674883e167603f141728de7e
       sha256: 4e5c50cf5ecc00d83a20b987c52d49b78fa96026437ab09b11f4b7c46b7fc061
+    category: main
+    optional: false
+  - name: earthaccess
+    version: 0.19.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      fsspec: '>=2025.2'
+      importlib_resources: '>=6.3.2'
+      multimethod: '>=1.8'
+      pqdm: '>=0.1'
+      python-cmr: '>=0.10.0'
+      requests: '>=2.26'
+      s3fs: '>=2025.2'
+      tenacity: '>=8.0'
+      tinynetrc: '>=1.3.1'
+      typing_extensions: '>=4.10.0'
+      python: '>=3.12'
+    url: 
+      https://files.pythonhosted.org/packages/0c/a8/59d73f510540e680c5d6232995e47e39603d262f6ec9b8b8879a9bbe912f/earthaccess-0.19.0-py3-none-any.whl
+    hash:
+      md5: 5d65524d54a29f3b63ed016d63ffa747
+      sha256: ca5535d80447714d89d733f91d7e427be68aa5fcc64f4c2f4d1819e6113b8a6d
     category: main
     optional: false

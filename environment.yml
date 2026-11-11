@@ -1,8 +1,10 @@
 channels:
   - conda-forge
+  - conda-pypi
 dependencies:
+  - bash_kernel
   - dask
-  - earthaccess
+  - conda-pypi::earthaccess[extras=[virtualizarr]]  # extras are not available on conda-forge::earthaccess
   - fsspec
   - geopandas
   - h5netcdf
@@ -11,11 +13,8 @@ dependencies:
   - ipywidgets
   - kerchunk
   - libnetcdf
-  - hdf5>=2.0
+  - hdf5
   - msgspec
   - rioxarray
   - tabulate
-  - xarray>=2026.04
-platforms:
-  - linux-64
-  - osx-arm64
+  - xarray

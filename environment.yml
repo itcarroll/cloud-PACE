@@ -2,6 +2,7 @@ channels:
   - conda-forge
   - conda-pypi
 dependencies:
+  - bash_kernel
   - dask
   - earthaccess[extras=[virtualizarr]]
   - fsspec

@@ -9,7 +9,7 @@ metadata:
   sources:
     - ''
   time_metadata:
-    created_at: '2026-11-11T15:49:52Z'
+    created_at: '2026-11-11T17:25:22Z'
   custom_metadata:
     created_by: conda-lockfiles 0.2.2
 package:
@@ -386,6 +386,21 @@ package:
     hash:
       md5: 672d020bf410b1f905f7c1b57a1dfb6e
       sha256: 9db642111b5b7dae9cd10eeb0c5a11c6e492a8fa79c6b2f9327e49b2ab09db89
+    category: main
+    optional: false
+  - name: bash
+    version: '5.3'
+    manager: conda
+    platform: linux-64
+    dependencies:
+      readline: '>=8.3,<9.0a0'
+      libgcc: '>=15'
+      __glibc: '>=2.17,<3.0.a0'
+    url: 
+      https://conda.anaconda.org/conda-forge/linux-64/bash-5.3-hc8f965d_0.conda
+    hash:
+      md5: 6269b7ac519d321d9ce14cca0fe28a4e
+      sha256: b47d73162d8b008c9984e8fbe207dfe96e9986f943cd158ed29adcec5493eed5
     category: main
     optional: false
   - name: blosc
@@ -3577,6 +3592,24 @@ package:
       sha256: c84be4a2779cbb7f267b436cef6fb35fc88610ab8d40dabcb360e926820881ea
     category: main
     optional: false
+  - name: bash_kernel
+    version: 0.10.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      __unix: ''
+      bash: ''
+      filetype: ''
+      ipykernel: ''
+      pexpect: ''
+      python: '>=3.9'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/bash_kernel-0.10.0-pyh707e725_0.conda
+    hash:
+      md5: fd96f15846759b093bf9f331a1668394
+      sha256: e097131a3e7694528a8d2b182ed3d635fe84f67baa5c7f331fb9e53b54368895
+    category: main
+    optional: false
   - name: bokeh
     version: 3.10.0
     manager: conda
@@ -3908,6 +3941,19 @@ package:
     hash:
       md5: d20deea26cfe86870cd4cf36090919b1
       sha256: 6f15be90dda1401a5977d46f6e978ba59ee0b0a2b5f6a6b9ac44a4bb4f44cd7a
+    category: main
+    optional: false
+  - name: filetype
+    version: 1.2.0
+    manager: conda
+    platform: linux-64
+    dependencies:
+      python: '>3.6'
+    url: 
+      https://conda.anaconda.org/conda-forge/noarch/filetype-1.2.0-pyhd8ed1ab_0.tar.bz2
+    hash:
+      md5: 8db22d14ef51223a783383b45c63fbe0
+      sha256: 4bb954cd07db9faa08c937df963483f34a964e8d5bcea957d16ef456a761432f
     category: main
     optional: false
   - name: folium

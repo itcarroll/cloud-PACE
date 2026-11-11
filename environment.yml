@@ -1,5 +1,6 @@
 channels:
   - conda-forge
+  - conda-pypi
 dependencies:
   - dask
   - earthaccess
@@ -11,11 +12,8 @@ dependencies:
   - ipywidgets
   - kerchunk
   - libnetcdf
-  - hdf5>=2.0
+  - hdf5
   - msgspec
   - rioxarray
   - tabulate
-  - xarray>=2026.04
-platforms:
-  - linux-64
-  - osx-arm64
+  - xarray

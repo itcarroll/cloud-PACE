@@ -3,7 +3,7 @@ channels:
   - conda-pypi
 dependencies:
   - dask
-  - earthaccess
+  - earthaccess[extras=[virtualizarr]]
   - fsspec
   - geopandas
   - h5netcdf

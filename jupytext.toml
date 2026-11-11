@@ -1,3 +1,7 @@
-[formats]
+[[formats]]
 "notebooks/" = "ipynb"
-"scripts/" = "py"
+"src/scripts/" = "py"
+
+[[formats]]
+"docs/" = "ipynb"
+"src/docs/" = "py"

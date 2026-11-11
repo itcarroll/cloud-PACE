@@ -6,6 +6,15 @@ COPY --chown=0:0 <<EOF /etc/gitconfig
         helper = cache --timeout 86400
 EOF
 
+COPY --chown=0:0 <<EOF /usr/local/bin/before-notebook.d/ssh-agent.sh
+eval "$(ssh-agent)"
+EOF
+
+COPY --chown=0:0 <<EOF /etc/ssh/ssh_config.d/agent.conf
+Host *
+    AddKeysToAgent yes
+EOF
+
 RUN conda install --yes jupytext \
  && conda clean --yes --all --force
 

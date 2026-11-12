@@ -15,7 +15,12 @@ Host *
     AddKeysToAgent yes
 EOF
 
-RUN conda install --yes jupytext \
+RUN conda install --yes \
+      jupytext \
+      jupyterlab-myst \
+      jupyterlab_code_formatter \
+      black \
+      isort \
  && conda clean --yes --all --force
 
 ARG KERNEL_ENV=repo

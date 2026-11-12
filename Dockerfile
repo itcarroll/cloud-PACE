@@ -18,7 +18,7 @@ EOF
 # https://github.com/jupyter-book/jupyterlab-myst/issues/296
 RUN conda install --yes \
       jupytext \
-      conda-pypi::jupyterlab-myst<=2.5 \
+      "conda-pypi::jupyterlab-myst<=2.5" \
       jupyterlab_code_formatter \
       black \
       isort \

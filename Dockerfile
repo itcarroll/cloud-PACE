@@ -16,6 +16,10 @@ Host *
     AddKeysToAgent yes
 EOF
 
+COPY --chown=0:0 <<'EOF' /etc/profile.d/globstar.sh
+shopt -s globstar
+EOF
+
 # https://github.com/jupyter-book/jupyterlab-myst/issues/296
 RUN conda install --yes \
       jupytext \
